@@ -1,6 +1,8 @@
-﻿using MapToPlan.Scripts.Core;
+﻿using System;
+using MapToPlan.Scripts.Core;
 using TMPro;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace MapToPlan.Example._Scripts.Modifiers
 {
@@ -13,7 +15,7 @@ namespace MapToPlan.Example._Scripts.Modifiers
             TextPrefab = textPrefab;
         }
 
-        protected override void Apply(Vector3[] input, Transform parent)
+        protected override void Apply(Vector3[] input, Transform parent, AxisType axisType)
         {
             for (var i = 1; i < input.Length; i++)
             {
@@ -24,8 +26,25 @@ namespace MapToPlan.Example._Scripts.Modifiers
                 var measureText = Object.Instantiate(TextPrefab, parent);
                 measureText.text = dist.ToString("0.00") + " m";
 
-                var lookAt = Quaternion.LookRotation(b - a, Vector3.up);
-                lookAt = Quaternion.Euler(lookAt.eulerAngles.With(90, -90, 0));
+                Quaternion lookAt;
+                switch (axisType)
+                {
+                    case AxisType.XZ:
+                        lookAt = Quaternion.LookRotation(b - a, Vector3.up);
+                        lookAt = Quaternion.Euler(lookAt.eulerAngles.With(90, -90, 0));
+                        break;
+                    case AxisType.XY:
+                        lookAt = Quaternion.LookRotation(b - a, Vector3.right);
+                        lookAt *= Quaternion.Euler(0,90*Mathf.Sign(lookAt.eulerAngles.x-180),0);
+                        break;
+                    case AxisType.YZ:
+                        lookAt = Quaternion.LookRotation(b - a, Vector3.up);
+                        // lookAt *= Quaternion.Euler(0,0,90*Mathf.Sign(lookAt.eulerAngles.y-180));
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(axisType), axisType, null);
+                }
+
                 measureText.transform.rotation = lookAt;
                 measureText.transform.position = (a + (b - a) / 2f) + measureText.transform.up * 0.2f;
 

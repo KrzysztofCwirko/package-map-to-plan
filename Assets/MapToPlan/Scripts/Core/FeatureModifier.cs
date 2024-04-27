@@ -43,25 +43,25 @@ namespace MapToPlan.Scripts.Core
             return this;
         }
         
-        public void ApplyMe(T input, Transform parent)
+        public void ApplyMe(T input, Transform parent, AxisType axisType)
         {
             switch (Type)
             {
                 case ModifierType.AlwaysAfter:
-                    Apply(input, parent);
+                    Apply(input, parent, axisType);
                     return;
                 case ModifierType.AlwaysBefore:
-                    Apply(input, parent);
+                    Apply(input, parent, axisType);
                     return;
                 case ModifierType.Cyclic:
                     Countdown = (Countdown + 1) % Steps;
                     if (Countdown != 0) return;
-                    Apply(input, parent);
+                    Apply(input, parent, axisType);
                     return;
                 case ModifierType.DelayedAlwaysAfter:
                     Delay -= 1;
                     if(Delay > 0) return;
-                    Apply(input, parent);
+                    Apply(input, parent, axisType);
                     return;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -73,7 +73,8 @@ namespace MapToPlan.Scripts.Core
         /// </summary>
         /// <param name="input">Same as the feature input</param>
         /// <param name="parent">Same as the feature parent</param>
-        protected virtual void Apply(T input, Transform parent)
+        /// <param name="axisType">Optional: target axis</param>
+        protected virtual void Apply(T input, Transform parent, AxisType axisType)
         {
             
         }

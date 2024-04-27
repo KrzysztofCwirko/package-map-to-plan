@@ -23,13 +23,14 @@ namespace MapToPlan.Example._Scripts.Test
             var temp = new Vector3[testLine.positionCount];
             testLine.GetPositions(temp);
             var feature = new LineRendererFeature(temp, linePrefab).SetModifiers(new LineMeasureModifier(measureModifierPrefab));
+
             var result = Scripts.Core.MapToPlan.Instance.MakeMeasureMaps(new[]
             {
                 new PlanDataEntity
                 {
-                    Features = new List<PlanFeature> { feature }
+                    Features = new List<PlanFeature> {feature}
                 }
-            }, AxisType.XZ, 200, 1);
+            }, AxisType.YZ, 500, 1, 1024);
 
             while (!result.IsCompleted)
             {

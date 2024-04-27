@@ -17,7 +17,7 @@ namespace MapToPlan.Example._Scripts.Features
         private LineRenderer Line { get; }
         private LineRenderer InstantiatedLine { get; set; }
 
-        public override void FillPlan(Transform parent)
+        public override void FillPlan(Transform parent, AxisType axisType)
         {
             InstantiatedLine = Object.Instantiate(Line, parent);
             InstantiatedLine.positionCount = Data.Length;
@@ -33,5 +33,13 @@ namespace MapToPlan.Example._Scripts.Features
         {
             return InstantiatedLine.bounds;
         }
+
+        public override void ApplyScaleChange(float newScale)
+        {
+            InstantiatedLine.startWidth *= newScale;
+            InstantiatedLine.endWidth = InstantiatedLine.startWidth;
+        }
+        
+        
     }
 }

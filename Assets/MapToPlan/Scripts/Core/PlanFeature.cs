@@ -10,7 +10,8 @@ namespace MapToPlan.Scripts.Core
         /// Fill the map. They will be automatically set to be on the MapRender layer.
         /// </summary>
         /// <param name="parent">Spawn your objects in this parent.</param>
-        public abstract void FillPlan(Transform parent);
+        /// <param name="target">Target axis</param>
+        public abstract void FillPlan(Transform parent, AxisType target);
 
         /// <summary>
         /// How big is this feature, for example the bounds of LineRenderer
@@ -39,7 +40,14 @@ namespace MapToPlan.Scripts.Core
         /// </summary>
         /// <param name="target">Run modifiers of this type</param>
         /// <param name="parent">Same as the FillPlan parent</param>
-        public abstract void ApplyModifiers(ModifierType target, Transform parent);
+        /// <param name="axis">Target axis type</param>
+        public abstract void ApplyModifiers(ModifierType target, Transform parent, AxisType axis);
+
+        /// <summary>
+        /// Method used to hande scale change during normalization
+        /// </summary>
+        /// <param name="newScale">New scale</param>
+        public abstract void ApplyScaleChange(float newScale);
     }
     
     public class PlanFeature<T> : PlanFeature
@@ -52,7 +60,7 @@ namespace MapToPlan.Scripts.Core
             Data = input;
         }
         
-        public override void FillPlan(Transform parent)
+        public override void FillPlan(Transform parent, AxisType axisType)
         {
             
         }
@@ -77,17 +85,22 @@ namespace MapToPlan.Scripts.Core
             Modifiers = modifiers.ToList();
             return this;
         }
-        
-        public override void ApplyModifiers(ModifierType target, Transform parent)
+
+        public override void ApplyModifiers(ModifierType target, Transform parent, AxisType axisType)
         {
             if(Modifiers == default || Modifiers.Count == 0) return;
             var targets = Modifiers.FindAll(m => m.Type == target);
             foreach (var featureModifier in targets)
             {
-                featureModifier.ApplyMe(Data, parent);
+                featureModifier.ApplyMe(Data, parent, axisType);
             }
         }
-        
+
+        public override void ApplyScaleChange(float newScale)
+        {
+            
+        }
+
         public override bool GetModifiersExtend(out Bounds result)
         {
             result = new Bounds();
