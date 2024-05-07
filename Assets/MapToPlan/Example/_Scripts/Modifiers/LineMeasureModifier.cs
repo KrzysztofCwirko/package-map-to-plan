@@ -35,11 +35,25 @@ namespace MapToPlan.Example._Scripts.Modifiers
                         break;
                     case AxisType.XY:
                         lookAt = Quaternion.LookRotation(b - a, Vector3.right);
-                        lookAt *= Quaternion.Euler(0,90*Mathf.Sign(lookAt.eulerAngles.x-180),0);
+                        var zR = 180f;
+                        var xR = lookAt.eulerAngles.x - 180f > 0f ? 0f: 180f;
+                        lookAt *= Quaternion.Euler(xR,90, zR);
                         break;
                     case AxisType.YZ:
+                        // lookAt = Quaternion.LookRotation(b - a, Vector3.forward);
+                        // zR = lookAt.eulerAngles.z - 180f > 0f ? 180: 0f;
+                        // var sign = Mathf.Sign(lookAt.eulerAngles.x-180f);
+                        //
+                        // if (sign > 0 || Math.Abs(lookAt.eulerAngles.x) < 0.001f)
+                        // {
+                        //     lookAt *= Quaternion.Euler(0f,90, zR);
+                        // }
+                        // else
+                        // {
+                        //     lookAt *= Quaternion.Euler(180f, 180, lookAt.eulerAngles.x*sign);
+                        // }
                         lookAt = Quaternion.LookRotation(b - a, Vector3.up);
-                        // lookAt *= Quaternion.Euler(0,0,90*Mathf.Sign(lookAt.eulerAngles.y-180));
+                        lookAt = Quaternion.Euler(lookAt.eulerAngles.With(0, -90, 90));
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(axisType), axisType, null);

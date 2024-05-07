@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using MapToPlan.Example._Scripts.Features;
 using MapToPlan.Example._Scripts.Modifiers;
 using MapToPlan.Scripts.Core;
@@ -13,32 +15,59 @@ namespace MapToPlan.Example._Scripts.Test
     public class TestMapToPlan : MonoBehaviour
     {
         [SerializeField] private RawImage testImage;
-        [SerializeField] private LineRenderer testLine;
+        [SerializeField] private LineRenderer[] testLines;
 
         [SerializeField] private LineRenderer linePrefab;
         [SerializeField] private TMP_Text measureModifierPrefab;
 
+        [SerializeField] private Texture2D[] results;
+
         private IEnumerator Start()
         {
-            var temp = new Vector3[testLine.positionCount];
-            testLine.GetPositions(temp);
-            var feature = new LineRendererFeature(temp, linePrefab).SetModifiers(new LineMeasureModifier(measureModifierPrefab));
+            var maps = new PlanDataEntity[testLines.Length];
 
-            var result = Scripts.Core.MapToPlan.Instance.MakeMeasureMaps(new[]
+            for (var i = 0; i < maps.Length; i++)
             {
-                new PlanDataEntity
+                var temp = new Vector3[testLines[i].positionCount];
+                testLines[i].GetPositions(temp);
+                var feature = new LineRendererFeature(temp, linePrefab).SetModifiers(new LineMeasureModifier(measureModifierPrefab));
+                maps[i] = new PlanDataEntity((AxisType)Enum.GetNames(typeof(AxisType)).ToList().IndexOf(testLines[i].name[5..]), 500, 1, 1024)
                 {
                     Features = new List<PlanFeature> {feature}
-                }
-            }, AxisType.YZ, 500, 1, 1024);
+                };
+            }
+         
+
+            var result = Scripts.Core.MapToPlan.Instance.MakeMeasureMaps(maps);
 
             while (!result.IsCompleted)
             {
                 yield return null;
             }
 
-            testImage.texture = result.Result[0];
-            testImage.rectTransform.sizeDelta = new Vector2(testImage.texture.width, testImage.texture.height);
+            results = result.Result;
+            StartCoroutine(Scroll());
+       }
+
+        private IEnumerator Scroll()
+        {
+            var id = 0;
+            while (true)
+            {
+                testImage.texture = results[id];
+                testImage.rectTransform.sizeDelta = new Vector2(testImage.texture.width, testImage.texture.height);
+                
+                var t = 1f;
+
+                while (t > 0)
+                {
+                    t -= Time.deltaTime;
+                    yield return null;
+                }
+
+                id += 1;
+                id %= results.Length;
+            }
         }
     }
 }

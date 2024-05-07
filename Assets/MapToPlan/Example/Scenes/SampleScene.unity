@@ -292,9 +292,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   testImage: {fileID: 1299352624}
-  testLine: {fileID: 1163204491}
+  testLines:
+  - {fileID: 1163204491}
   linePrefab: {fileID: 293797473718171272, guid: b273ef71655ce89459caac8b315acb7d, type: 3}
   measureModifierPrefab: {fileID: 3804680548208575450, guid: fa7e59f851676f142b00c7d6cda6670e, type: 3}
+  results: []
 --- !u!4 &254126037
 Transform:
   m_ObjectHideFlags: 0
@@ -551,7 +553,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1163204490
 Transform:
   m_ObjectHideFlags: 0

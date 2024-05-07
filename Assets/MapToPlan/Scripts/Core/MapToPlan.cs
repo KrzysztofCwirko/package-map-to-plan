@@ -31,15 +31,10 @@ namespace MapToPlan.Scripts.Core
         /// <summary>
         /// Generate Texture2D based on given features.
         /// </summary>
-        /// <param name="targetAxis">Where to put camera and calculate orthographic size</param>
-        /// <param name="pixelsPerUnit">How big will be your output image. 500 is enough to always be readable for bigger maps (>4m). Decreasing this value will result in faster, but more blurry maps.</param>
-        /// <param name="padding">Padding around result</param>
-        /// <param name="input">The features to be draw</param>
-        /// <param name="maxOutputDimension">Optional: for high-dimension images scale down the output to reach this parameter max</param>
+        /// /// <param name="input">The features to be draw</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<Texture2D[]> MakeMeasureMaps(PlanDataEntity[] input, AxisType targetAxis = AxisType.XZ,
-            float pixelsPerUnit = 512, float padding = 0.2f, int maxOutputDimension = 8192)
+        public async Task<Texture2D[]> MakeMeasureMaps(PlanDataEntity[] input)
         {
             if (LayerMask.NameToLayer(Layer) == -1)
             {
@@ -65,11 +60,12 @@ namespace MapToPlan.Scripts.Core
                 var boundary = new Bounds();
                 foreach (var feature in data.Features)
                 {
-                    feature.ApplyModifiers(ModifierType.AlwaysBefore, _resultParent, targetAxis);
-                    feature.FillPlan(_resultParent, targetAxis);
-                    feature.ApplyModifiers(ModifierType.AlwaysAfter, _resultParent, targetAxis);
-                    feature.ApplyModifiers(ModifierType.Cyclic, _resultParent, targetAxis);
-                    feature.ApplyModifiers(ModifierType.DelayedAlwaysAfter, _resultParent, targetAxis);
+                    feature.ApplyModifiers(ModifierType.AlwaysBefore, _resultParent, data.TargetAxis);
+                    feature.FillPlan(_resultParent, data.TargetAxis);
+                    await Task.Yield();
+                    feature.ApplyModifiers(ModifierType.AlwaysAfter, _resultParent, data.TargetAxis);
+                    feature.ApplyModifiers(ModifierType.Cyclic, _resultParent, data.TargetAxis);
+                    feature.ApplyModifiers(ModifierType.DelayedAlwaysAfter, _resultParent, data.TargetAxis);
 
                     boundary.Encapsulate(feature.GetMyExtends());
                     if (feature.GetModifiersExtend(out var extends))
@@ -80,12 +76,12 @@ namespace MapToPlan.Scripts.Core
 
                 _resultParent.gameObject.SetLayerRecursively(LayerMask.NameToLayer(Layer));
 
-                var targetCameraRotation = targetAxis switch
+                var targetCameraRotation = data.TargetAxis switch
                 {
                     AxisType.XZ => Quaternion.Euler(90, 90, 0),
                     AxisType.XY => Quaternion.Euler(0, 0, -90),
                     AxisType.YZ => Quaternion.Euler(0, 90, 0),
-                    _ => throw new ArgumentOutOfRangeException(nameof(targetAxis), targetAxis, null)
+                    _ => throw new ArgumentOutOfRangeException(nameof(data.TargetAxis), data.TargetAxis, null)
                 };
                 
                 var t = renderCamera.transform;
@@ -97,7 +93,7 @@ namespace MapToPlan.Scripts.Core
                 float minB;
                 float maxB;
 
-                switch (targetAxis)
+                switch (data.TargetAxis)
                 {
                     case AxisType.XZ:
                         cameraDistance = boundary.max.y;
@@ -121,7 +117,7 @@ namespace MapToPlan.Scripts.Core
                         maxB = boundary.max.z;
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(targetAxis), targetAxis, null);
+                        throw new ArgumentOutOfRangeException(nameof(data.TargetAxis), data.TargetAxis, null);
                 }
 
                 var width = Mathf.Abs(maxA - minA);
@@ -132,7 +128,7 @@ namespace MapToPlan.Scripts.Core
                     throw new Exception("Your bounds are probably all zeros");
                 }
 
-                var baseDimension = Mathf.RoundToInt(Mathf.Max(width, height, 2) * pixelsPerUnit);
+                var baseDimension = Mathf.RoundToInt(Mathf.Max(width, height, 2) * data.PixelsPerUnit);
                 var aspect = width / height;
 
                 if (renderCamera.targetTexture != null)
@@ -143,13 +139,13 @@ namespace MapToPlan.Scripts.Core
                 var outputWidth =  width > height ? baseDimension : Mathf.RoundToInt(baseDimension * (1f / aspect));
                 var outputHeight = width > height ? Mathf.RoundToInt(baseDimension * aspect) : baseDimension;
 
-                renderCamera.orthographicSize = (width + padding) * .5f;
+                renderCamera.orthographicSize = (width + data.Padding) * .5f;
 
                 var norm = 1f;
 
-                if (Mathf.Max(outputHeight, outputWidth) > maxOutputDimension)
+                if (Mathf.Max(outputHeight, outputWidth) > data.MaxOutputDimension)
                 {
-                    norm =  maxOutputDimension / Mathf.Max((float)outputHeight, outputWidth);
+                    norm =  data.MaxOutputDimension / Mathf.Max((float)outputHeight, outputWidth);
                     _resultParent.localScale = Vector3.one * norm;
                     renderCamera.orthographicSize *= norm;
                     outputWidth = Mathf.RoundToInt(outputWidth * norm);
@@ -166,12 +162,12 @@ namespace MapToPlan.Scripts.Core
                 
                 renderCamera.targetTexture = new RenderTexture(outputWidth, outputHeight, 24);
 
-                var targetCameraPosition = targetAxis switch
+                var targetCameraPosition = data.TargetAxis switch
                 {
                     AxisType.XZ => new Vector3(minA + width / 2f, cameraDistance + 1f/norm, minB + height / 2f),
                     AxisType.XY => new Vector3(minA + width / 2f, minB + height / 2f, -cameraDistance - 1f/norm),
                     AxisType.YZ => new Vector3(-cameraDistance - 1f/norm, minA + width / 2f, minB + height / 2f),
-                    _ => throw new ArgumentOutOfRangeException(nameof(targetAxis), targetAxis, null)
+                    _ => throw new ArgumentOutOfRangeException(nameof(data.TargetAxis), data.TargetAxis, null)
                 };
                 
                 t.position = _resultParent.TransformPoint(targetCameraPosition);
@@ -196,6 +192,7 @@ namespace MapToPlan.Scripts.Core
                     // Destroy(_resultParent.transform.GetChild(i).gameObject);
                 }
 
+                _resultParent.localScale = Vector3.one;
                 //wait for destroy
                 await Task.Yield();
             }
